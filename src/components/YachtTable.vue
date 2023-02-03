@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="6">
+      <v-col cols="4">
         <h1>요트 다이스!</h1>
       </v-col>
       <v-col cols="4">
@@ -14,13 +14,21 @@
           @keyup.enter.prevent="addPlayer"
         ></v-text-field>
       </v-col>
-      <v-col cols="2">
+      <v-col cols="4">
         <v-btn
           outlined
-          color="blue"
+          color="purple"
           @click="clear"
         >
           Replay
+        </v-btn>
+        <v-btn
+          class="ml-2"
+          outlined
+          color="blue"
+          @click="finish"
+        >
+          Finish
         </v-btn>
       </v-col>
     </v-row>
@@ -35,6 +43,8 @@
                 :key="p.name"
               >
                 {{ p.name }}
+
+                <v-icon color="green">mdi-flag</v-icon>{{ p.count }}
                 <v-btn
                   icon
                   @click="deletePlayer(p.name)"
@@ -320,11 +330,10 @@
     </v-row>
     <v-snackbar
       v-model="snackbar"
-      timeout="2000"
-      color="red"
+      timeout="3000"
       vertical="vertical"
     >
-      중복! 다른 이름을 사용하세요
+      {{ msg }}
 
       <template v-slot:action="{ attrs }">
         <v-btn
@@ -345,6 +354,7 @@ export default {
   data() {
     return {
       snackbar: false,
+      msg: "",
       name: "",
       players: [],
       initialState: {
@@ -403,21 +413,46 @@ export default {
         return;
       }
       if (this.players.find((p) => p.name === this.name)) {
+        this.msg = "중복! 다른 이름을 사용하세요";
         this.snackbar = true;
         return;
       }
 
       this.players.push({
         name: this.name,
+        count: 0,
         ...this.initialState,
       });
       this.name = "";
     },
     deletePlayer(name) {
-      this.players = this.players.filter((p) => p.name !== name);
+      if (confirm("삭제하시겠습니까?")) {
+        this.players = this.players.filter((p) => p.name !== name);
+      }
     },
     clear() {
       if (confirm("점수가 초기화됩니다. 다시 시작하시겠습니까?")) {
+        this.players.forEach((p) => {
+          Object.assign(p, this.initialState);
+        });
+      }
+    },
+    finish() {
+      if (confirm("경기가 끝났습니까?")) {
+        let max = 0;
+        let winner = [];
+        this.players.forEach((p) => {
+          if (p.total > max) {
+            max = p.total;
+            winner = [p];
+          } else if (p.total === max) {
+            winner.push(p);
+          }
+        });
+
+        this.msg = `${winner.map((p) => p.name)} 우승~~~`;
+        this.snackbar = true;
+        winner.forEach((p) => (p.count += 1));
         this.players.forEach((p) => {
           Object.assign(p, this.initialState);
         });
